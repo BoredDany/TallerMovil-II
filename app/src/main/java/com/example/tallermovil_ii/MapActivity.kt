@@ -250,7 +250,7 @@ class MapActivity : AppCompatActivity() {
                 true
             }
             R.id.users -> {
-                //lanzar activity usuarios lista
+                startActivity(Intent(this, UsersListActivity::class.java))
                 true
             }
             R.id.logout -> {
@@ -264,30 +264,6 @@ class MapActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
-    }
-
-    private fun loadUser() {
-        /*myRef = database.getReference(DataBase.PATH_USER)
-        val userRef = myRef.child(auth.currentUser!!.uid)
-        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
-            override fun onDataChange(dataSnapshot: DataSnapshot) {
-                for (singleSnapshot in dataSnapshot.children) {
-                    val myUser = singleSnapshot.getValue(User::class.java)
-                    Log.i(TAG, "Encontró usuario: " + myUser?.name)
-
-                    userRef.child("status").setValue(nuevoNombre)
-                        .addOnSuccessListener {
-                            Log.d(TAG, "Nombre del usuario actualizado exitosamente a: $nuevoNombre")
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e(TAG, "Error al actualizar el nombre del usuario: ${e.message}")
-                        }
-                }
-            }
-            override fun onCancelled(databaseError: DatabaseError) {
-                Log.w(TAG, "error en la consulta", databaseError.toException())
-            }
-        })*/
     }
 
 }
