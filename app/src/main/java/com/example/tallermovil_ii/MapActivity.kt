@@ -78,6 +78,8 @@ class MapActivity : AppCompatActivity() {
                     val startPoint = GeoPoint(location.latitude, location.longitude);
                     mapController.setCenter(startPoint);
                     currentLocationmarker = createMarkerRetMark(startPoint, "null", null, R.drawable.baseline_location_on_25)
+                    currentLocationmarker?.let { map!!.overlays.add(it) }
+
                 } else {
                     Log.i("LOCATION", "FAIL location")
                 }
