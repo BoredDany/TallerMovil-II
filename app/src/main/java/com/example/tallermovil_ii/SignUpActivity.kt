@@ -147,6 +147,8 @@ class SignUpActivity : AppCompatActivity() {
         }
 
         binding.btnCamera.setOnClickListener { permissionCamera() }
+
+        binding.btnGallery.setOnClickListener { permissionGallery() }
     }
 
     private fun saveuser(){
@@ -213,7 +215,6 @@ class SignUpActivity : AppCompatActivity() {
             }
         })
     }
-
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
             val intent = Intent(this, MapActivity::class.java)
@@ -351,6 +352,44 @@ class SignUpActivity : AppCompatActivity() {
             ".jpg", /* suffix */
             storageDir /* directory */
         )
+    }
+
+    private fun permissionGallery(){
+        when {
+            ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                selectPhoto()
+            }
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this, android.Manifest.permission.READ_EXTERNAL_STORAGE
+            ) -> {
+                Toast.makeText(this, "WE NEED PERMISSION TO ACCESS GALLERY", Toast.LENGTH_SHORT).show()
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    Permission.MY_PERMISSION_REQUEST_GALLERY
+                )
+            }
+            else -> {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                    Permission.MY_PERMISSION_REQUEST_GALLERY
+                )
+            }
+        }
+    }
+
+    fun selectPhoto () {
+        val permissionCheck = ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+        if (permissionCheck == PackageManager.PERMISSION_GRANTED) {
+            val pickImage = Intent(Intent.ACTION_PICK)
+            pickImage.type = "image/*"
+            startActivityForResult(pickImage, Permission.IMAGE_PICKER_REQUEST)
+        } else {
+            Toast.makeText(this, "NO PERMISSION TO ACCESS GALLERY", Toast.LENGTH_SHORT).show()
+            requestPermissions(arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE),
+                Permission.MY_PERMISSION_REQUEST_GALLERY)
+        }
     }
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
