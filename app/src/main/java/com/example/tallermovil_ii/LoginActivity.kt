@@ -15,7 +15,7 @@ import com.google.firebase.auth.auth
 class LoginActivity : AppCompatActivity() {
     //VIEW
     lateinit var binding: ActivityLoginBinding
-    val TAG = "Login"; // Replace "MyActivity" with your class name
+    val TAG = "Login";
 
     //AUTH
     private lateinit var auth: FirebaseAuth
