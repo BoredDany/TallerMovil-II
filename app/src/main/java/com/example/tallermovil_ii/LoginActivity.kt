@@ -40,9 +40,9 @@ class LoginActivity : AppCompatActivity() {
 
     private fun updateUI(currentUser: FirebaseUser?) {
         if (currentUser != null) {
-            /*val intent = Intent(this, MapActivity::class.java)
+            val intent = Intent(this, MapActivity::class.java)
             intent.putExtra("user", currentUser.email)
-            startActivity(intent)*/
+            startActivity(intent)
             Toast.makeText(this, "ya inicio: " + currentUser.email, Toast.LENGTH_SHORT).show()
         } else {
             binding.email.setText("")
