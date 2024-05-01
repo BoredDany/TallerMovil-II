@@ -73,6 +73,8 @@ class SignUpActivity : AppCompatActivity() {
         setContentView(binding.root)
 
         //INITIALIZE
+        permisoUbicacion()
+        myRef = database.getReference(DataBase.PATH_USER)
         auth = Firebase.auth
         mFusedLocationProviderClient = LocationServices.getFusedLocationProviderClient(this)
         mLocationRequest = createLocationRequest()
@@ -100,7 +102,6 @@ class SignUpActivity : AppCompatActivity() {
         }
 
     }
-
     override fun onPause() {
         super.onPause()
         stopLocationUpdates()
@@ -108,9 +109,8 @@ class SignUpActivity : AppCompatActivity() {
     private fun stopLocationUpdates() {
         mFusedLocationProviderClient.removeLocationUpdates(mLocationCallback)
     }
-
-    private fun createLocationRequest(): com.google.android.gms.location.LocationRequest =
-        com.google.android.gms.location.LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY,10000).apply {
+    private fun createLocationRequest(): LocationRequest = LocationRequest.Builder(
+        Priority.PRIORITY_HIGH_ACCURACY,10000).apply {
             setMinUpdateIntervalMillis(5000)
         }.build()
     private fun startLocationUpdates() {
@@ -126,7 +126,11 @@ class SignUpActivity : AppCompatActivity() {
     private fun setListenners(){
         binding.btnSignUp.setOnClickListener {
             if(validate() && checkCredentials()){
+                //guardar usuario en autenticacion
                 saveuser()
+                //guardar usuario en db
+                //guardar imagen
+
             }else{
                 Toast.makeText(this, "Invalid fields.", Toast.LENGTH_SHORT).show()
             }
@@ -144,6 +148,7 @@ class SignUpActivity : AppCompatActivity() {
 
         binding.btnCamera.setOnClickListener { permissionCamera() }
     }
+
     private fun saveuser(){
         auth.createUserWithEmailAndPassword(binding.email.text.toString(), binding.password.text.toString())
             .addOnCompleteListener(this) { task ->
@@ -152,46 +157,8 @@ class SignUpActivity : AppCompatActivity() {
                     val user = auth.currentUser
                     if (user != null) {
                         // Update user info
-                        val storageRef = FirebaseStorage.getInstance().reference
-                        val imagesRef = storageRef.child(DataBase.PATH_USER_IMAGES + user.uid)
-
-                        // Crea una referencia única para la imagen (por ejemplo, usando el timestamp actual)
-                        val imageName = "image_${System.currentTimeMillis()}.jpg"
-                        val imageRef = imagesRef.child(imageName)
-
-                        // Sube la imagen al Firebase Storage
-                        imageRef.putFile(localPhoto!!).addOnSuccessListener(object :
-                            OnSuccessListener<UploadTask.TaskSnapshot> {
-                            override fun onSuccess(taskSnapshot: UploadTask.TaskSnapshot) {
-                                // Get a URL to the uploaded content
-                                imageRef.downloadUrl.addOnSuccessListener { uri ->
-                                    url = uri.toString()
-                                    saveuser()
-                                }.addOnFailureListener { exception ->
-                                    // Error al obtener la URL de descarga
-                                    Log.i("FBApp", "Failed saving url image")
-                                }
-                                Log.i("FBApp", "Successfully uploaded image")
-                            }
-                        }).addOnFailureListener(object : OnFailureListener {
-                            override fun onFailure(exception: Exception) {
-                                // Handle unsuccessful uploads
-                                Log.i("FBApp", "Failed uploading image")
-                            }
-                        })
-
-                        val userInfo = User(binding.name.text.toString(),
-                            binding.lastName.text.toString(),
-                            binding.email.text.toString(),
-                            binding.password.text.toString(), url,
-                            binding.identification.text.toString(),
-                            point.latitude, point.longitude)
-
-                        myRef = database.getReference(DataBase.PATH_USER)
-                        myRef = database.getReference(DataBase.PATH_USER + user.uid)
-                        myRef.setValue(userInfo)
-
-                        updateUI(user)
+                        saveImage(user)
+                        //updateUserinfo(user)
                     }
                 } else {
                     Toast.makeText(this, "createUserWithEmail:Failure: " + task.exception.toString(),
@@ -199,6 +166,52 @@ class SignUpActivity : AppCompatActivity() {
                     task.exception?.message?.let { Log.e(TAG, it) }
                 }
             }
+    }
+
+    private fun updateUserinfo(currentUser: FirebaseUser){
+        val userInfo = User(binding.name.text.toString(),
+            binding.lastName.text.toString(),
+            binding.email.text.toString(),
+            binding.password.text.toString(), url,
+            binding.identification.text.toString(),
+            point.latitude, point.longitude)
+
+
+        myRef = database.getReference(DataBase.PATH_USER)
+        myRef = database.getReference(DataBase.PATH_USER + "/" + currentUser.uid)
+        myRef.setValue(userInfo)
+    }
+
+    private fun saveImage(currentUser: FirebaseUser){
+        // Update user info
+        val storageRef = FirebaseStorage.getInstance().reference
+        val imagesRef = storageRef.child(DataBase.PATH_USER_IMAGES + "/" + currentUser.uid)
+
+        // Crea una referencia única para la imagen (por ejemplo, usando el timestamp actual)
+        val imageName = "image_${System.currentTimeMillis()}.jpg"
+        val imageRef = imagesRef.child(imageName)
+
+        // Sube la imagen al Firebase Storage
+        imageRef.putFile(localPhoto!!).addOnSuccessListener(object :
+            OnSuccessListener<UploadTask.TaskSnapshot> {
+            override fun onSuccess(taskSnapshot: UploadTask.TaskSnapshot) {
+                // Get a URL to the uploaded content
+                imageRef.downloadUrl.addOnSuccessListener { uri ->
+                    url = uri.toString()
+                    updateUserinfo(currentUser)
+                    updateUI(currentUser)
+                }.addOnFailureListener { exception ->
+                    // Error al obtener la URL de descarga
+                    Log.i("FBApp", "Failed saving url image:" )
+                }
+                Log.i("FBApp", "Successfully uploaded image")
+            }
+        }).addOnFailureListener(object : OnFailureListener {
+            override fun onFailure(exception: Exception) {
+                // Handle unsuccessful uploads
+                Log.i("FBApp", "Failed uploading image"+ exception.message)
+            }
+        })
     }
 
     private fun updateUI(currentUser: FirebaseUser?) {
@@ -366,6 +379,28 @@ class SignUpActivity : AppCompatActivity() {
         }
     }
 
+    fun permisoUbicacion(){
+
+        when {
+            ContextCompat.checkSelfPermission(
+                this, android.Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // You can use the API that requires the permission.
+            }
+            ActivityCompat.shouldShowRequestPermissionRationale(
+                this, android.Manifest.permission.ACCESS_FINE_LOCATION) -> {
+                Toast.makeText(this, "Requiere acceso a ubicación", Toast.LENGTH_SHORT).show()
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    Permission.MY_PERMISSION_REQUEST_LOCATION)
+            }
+            else -> {
+                requestPermissions(
+                    arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
+                    Permission.MY_PERMISSION_REQUEST_LOCATION)
+            }
+        }
+    }
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
@@ -387,6 +422,14 @@ class SignUpActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, "Permiso de galería denegado", Toast.LENGTH_SHORT).show()
                 }
+            }
+            Permission.MY_PERMISSION_REQUEST_LOCATION -> {
+                if ((grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED)) {
+                    Toast.makeText(this, "Permiso de ubicación concedido", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "Permiso de ubicación negado", Toast.LENGTH_SHORT).show()
+                }
+                return
             }
             else -> {
                 // Ignore all other requests.
