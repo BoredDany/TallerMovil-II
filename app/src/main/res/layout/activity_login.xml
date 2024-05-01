@@ -34,4 +34,18 @@
         android:text="login">
     </Button>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="or"
+        android:layout_marginBottom="10dp">
+    </TextView>
+
+    <Button
+        android:id="@+id/btnSignUp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="sign up">
+    </Button>
+
 </LinearLayout>
