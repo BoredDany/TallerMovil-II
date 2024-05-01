@@ -21,7 +21,7 @@ class SignUpActivity : AppCompatActivity() {
     //SET LISTENNERS
     private fun setListenners(){
         binding.btnSignUp.setOnClickListener {
-            if(validate() && checkCredentials()){
+            if(validate()){
 
             }else{
                 Toast.makeText(this, "Invalid fields.", Toast.LENGTH_SHORT).show()
@@ -29,17 +29,17 @@ class SignUpActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkCredentials(): Boolean{
+    /*private fun checkCredentials(): Boolean{
         var valid = true
 
-        if (TextUtils.isEmpty(binding.email.text.toString())) {
+        if (!binding.email.text.toString().contains("@") || !binding.email.text.toString().contains(".") || binding.email.text.toString().length < 5){
             binding.email.error = "Invalid format."
             valid = false
-        } else {
+        }else{
             binding.email.error = null
         }
 
-        if (TextUtils.isEmpty(binding.password.text.toString())) {
+        if (binding.password.text.toString().length < 8) {
             binding.password.error = "Insecure password."
             valid = false
         } else {
@@ -54,7 +54,7 @@ class SignUpActivity : AppCompatActivity() {
         }
 
         return valid
-    }
+    }*/
 
     private fun validate(): Boolean {
         var valid = true
