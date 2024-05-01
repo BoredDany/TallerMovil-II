@@ -176,8 +176,7 @@ class SignUpActivity : AppCompatActivity() {
             binding.email.text.toString(),
             binding.password.text.toString(), url,
             binding.identification.text.toString(),
-            point.latitude, point.longitude)
-
+            point.latitude, point.longitude, DataBase.ACTIVE)
 
         myRef = database.getReference(DataBase.PATH_USER)
         myRef = database.getReference(DataBase.PATH_USER + "/" + currentUser.uid)

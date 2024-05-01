@@ -9,6 +9,7 @@ class User {
     var identification: String
     var latitude: Double
     var longitude: Double
+    var status: Int
 
     constructor(
         name: String,
@@ -18,7 +19,8 @@ class User {
         profilePhoto: String,
         identification: String,
         latitude: Double,
-        longitude: Double
+        longitude: Double,
+        status: Int
     ) {
         this.name = name
         this.lastName = lastName
@@ -28,5 +30,6 @@ class User {
         this.identification = identification
         this.latitude = latitude
         this.longitude = longitude
+        this.status = status
     }
 }

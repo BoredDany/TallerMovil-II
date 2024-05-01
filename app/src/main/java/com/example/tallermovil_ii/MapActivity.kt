@@ -7,42 +7,54 @@ import android.location.LocationRequest
 import android.os.Bundle
 import android.preference.PreferenceManager
 import android.util.Log
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import com.example.tallermovil_ii.databinding.ActivityMapBinding
+import com.example.tallermovil_ii.model.DataBase
 import com.example.tallermovil_ii.model.Location
 import com.example.tallermovil_ii.permission.Permission
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationServices
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import org.json.JSONObject
+import org.osmdroid.config.Configuration.getInstance
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
-import org.osmdroid.config.Configuration.*
 
 class MapActivity : AppCompatActivity() {
 
     lateinit var binding: ActivityMapBinding
-
-    private var map : MapView? = null
-
-
+    val TAG = "Update";
 
     //MAPA
     private lateinit var mFusedLocationProviderClient: FusedLocationProviderClient
-
+    private var map : MapView? = null
     private lateinit var mLocationRequest: LocationRequest
     private lateinit var mLocationCallback: LocationCallback
     private var currentLocationmarker: Marker? = null
     private var bumpLocationMarker: Marker? = null
 
+    //AUTH
+    private lateinit var auth: FirebaseAuth
+
+    //DATABASE
+    private val database = FirebaseDatabase.getInstance()
+    private lateinit var myRef: DatabaseReference
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -50,8 +62,10 @@ class MapActivity : AppCompatActivity() {
         binding = ActivityMapBinding.inflate(layoutInflater)
         setContentView(R.layout.activity_map)
 
-        permisoUbicacion()
+        //INITIALIZE
+        auth = Firebase.auth
 
+        permisoUbicacion()
 
         getInstance().load(this, PreferenceManager.getDefaultSharedPreferences(this))
 
@@ -110,12 +124,6 @@ class MapActivity : AppCompatActivity() {
         map!!.setTileSource(TileSourceFactory.MAPNIK)
         map!!.setMultiTouchControls(true)
     }
-
-
-
-
-
-
 
     fun readJsonLocations(context: Context, fileName: String): List<Location> {
         val inputStream = context.assets.open(fileName)
@@ -191,6 +199,95 @@ class MapActivity : AppCompatActivity() {
                 // Ignore all other requests.
             }
         }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        val inflater: MenuInflater = menuInflater
+        inflater.inflate(R.menu.menu, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        // Handle item selection
+        return when (item.itemId) {
+            R.id.change -> {
+
+                val firebaseAuth = FirebaseAuth.getInstance()
+                val currentUser = firebaseAuth.currentUser
+                if (currentUser != null) {
+                    val uid = currentUser.uid
+                    val database = FirebaseDatabase.getInstance()
+                    val userRef = database.getReference(DataBase.PATH_USER).child(uid)
+
+                    userRef.child("status").addListenerForSingleValueEvent(object : ValueEventListener {
+                        override fun onDataChange(dataSnapshot: DataSnapshot) {
+                            if (dataSnapshot.exists()) {
+                                val status = dataSnapshot.getValue(Int::class.java)
+                                var newStatus = if(status == DataBase.ACTIVE) DataBase.INACTIVE else DataBase.ACTIVE
+
+                                Log.i(TAG, "Estado del usuario: $status")
+
+                                userRef.child("status").setValue(newStatus)
+                                    .addOnSuccessListener {
+                                        Log.d(TAG, "Estado del usuario actualizado exitosamente a: $newStatus")
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Log.e(TAG, "Error al actualizar el estado del usuario: ${e.message}")
+                                    }
+                            } else {
+                                Log.w(TAG, "Status not found")
+                            }
+                        }
+
+                        override fun onCancelled(databaseError: DatabaseError) {
+                            Log.e(TAG, "Error al obtener el estado del usuario: ${databaseError.message}")
+                        }
+                    })
+                } else {
+                    Log.w(TAG, "No user signed in")
+                }
+
+                true
+            }
+            R.id.users -> {
+                //lanzar activity usuarios lista
+                true
+            }
+            R.id.logout -> {
+                //logout
+                auth.signOut()
+                val intent = Intent(this, LoginActivity::class.java)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                startActivity(intent)
+                finish()
+                true
+            }
+            else -> super.onOptionsItemSelected(item)
+        }
+    }
+
+    private fun loadUser() {
+        /*myRef = database.getReference(DataBase.PATH_USER)
+        val userRef = myRef.child(auth.currentUser!!.uid)
+        userRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                for (singleSnapshot in dataSnapshot.children) {
+                    val myUser = singleSnapshot.getValue(User::class.java)
+                    Log.i(TAG, "Encontró usuario: " + myUser?.name)
+
+                    userRef.child("status").setValue(nuevoNombre)
+                        .addOnSuccessListener {
+                            Log.d(TAG, "Nombre del usuario actualizado exitosamente a: $nuevoNombre")
+                        }
+                        .addOnFailureListener { e ->
+                            Log.e(TAG, "Error al actualizar el nombre del usuario: ${e.message}")
+                        }
+                }
+            }
+            override fun onCancelled(databaseError: DatabaseError) {
+                Log.w(TAG, "error en la consulta", databaseError.toException())
+            }
+        })*/
     }
 
 }
